@@ -35,14 +35,39 @@ BOOK_APPOINTMENT() {
   echo -e "Booking appointment"
   echo -e "Chosen service: $1"
 
-  CHECK_SERVICE=$($PSQL "SELECT name FROM services WHERE service_id = $1")
+  SERVICE_ID_SELECTED=$($PSQL "SELECT service_id FROM services WHERE service_id = $1")
 
-  if [[ -z $CHECK_SERVICE ]]
+  if [[ -z $SERVICE_ID_SELECTED ]]
   then 
     MAIN_MENU "That service does not exist"
   else
     # Do booking
-    echo -e "\n"
+    echo -e "\nPlease enter your phone number"
+    read CUSTOMER_PHONE
+
+    GET_CUSTOMER_RESULT=$($PSQL "SELECT customer_id FROM customers WHERE phone = '$CUSTOMER_PHONE'")
+
+    if [[ -z $GET_CUSTOMER_RESULT ]]
+    then
+      echo -e "\nPlease enter your name"
+      read CUSTOMER_NAME
+
+      INSERT_CUSTOMER_RESULT=$($PSQL "INSERT INTO customers(phone, name) VALUES('$CUSTOMER_PHONE', '$CUSTOMER_NAME')")
+      echo $INSERT_CUSTOMER_RESULT
+
+      if [[ $INSERT_CUSTOMER_RESULT == "INSERT 0 1" ]]
+      then
+        GET_CUSTOMER_RESULT=$($PSQL "SELECT customer_id FROM customers WHERE phone = '$CUSTOMER_PHONE'")
+        echo $GET_CUSTOMER_RESULT
+      fi
+
+    fi
+
+    echo -e "\nPlease enter your desired appointment time"
+    read SERVICE_TIME
+
+    BOOK_APPOINTMENT_RESULT=$($PSQL "INSERT INTO appointments(service_id, customer_id, time) VALUES($SERVICE_ID_SELECTED, $GET_CUSTOMER_RESULT, '$SERVICE_TIME')")
+
   fi
 }
 
